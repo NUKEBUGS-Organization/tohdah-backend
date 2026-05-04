@@ -1,0 +1,6 @@
+export declare class AppService {
+    getHealth(): {
+        service: string;
+        status: "ok";
+    };
+}
