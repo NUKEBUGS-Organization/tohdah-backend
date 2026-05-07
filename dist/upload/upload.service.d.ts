@@ -1,0 +1,33 @@
+import { OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+declare const SUBDIRS: readonly ["avatars", "delivery", "items", "chat"];
+export type UploadSubdir = (typeof SUBDIRS)[number];
+export declare function resolveUploadRootFromEnv(): string;
+export declare function resolveMaxUploadBytesFromEnv(): number;
+export declare function resolveUseCloudStorageFromEnv(): boolean;
+export declare class UploadService implements OnModuleInit {
+    private readonly config;
+    private readonly logger;
+    private readonly uploadRoot;
+    private readonly baseUrl;
+    private readonly maxBytes;
+    private readonly allowedMimeTypes;
+    private readonly useCloud;
+    constructor(config: ConfigService);
+    onModuleInit(): void;
+    isCloudStorageEnabled(): boolean;
+    getUploadRoot(): string;
+    getAbsoluteSubdir(subdir: UploadSubdir): string;
+    ensureDirectories(): Promise<void>;
+    getFilePath(subdir: string, filename: string): string;
+    uploadToCloud(file: Express.Multer.File, folder: UploadSubdir): Promise<string>;
+    deleteFromCloud(url: string): Promise<void>;
+    deleteFile(publicUrl: string): Promise<void>;
+    private publicIdFromCloudinaryUrl;
+    private publicUrlToRelativePath;
+    validateFile(file: Express.Multer.File): void;
+    getMaxFileSizeBytes(): number;
+    extensionFromMime(mimetype: string): string;
+    getBaseUrl(): string;
+}
+export {};

@@ -1,9 +1,11 @@
-import { AppService } from './app.service';
+import { RedisService } from './common/redis/redis.service';
 export declare class AppController {
-    private readonly appService;
-    constructor(appService: AppService);
-    getHealth(): {
+    private readonly redisService;
+    constructor(redisService: RedisService);
+    getHealth(): Promise<{
         service: string;
         status: "ok";
-    };
+        redis: string;
+        timestamp: string;
+    }>;
 }

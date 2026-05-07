@@ -11,14 +11,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
-const app_service_1 = require("./app.service");
+const throttle_decorator_1 = require("./common/decorators/throttle.decorator");
+const redis_service_1 = require("./common/redis/redis.service");
 let AppController = class AppController {
-    appService;
-    constructor(appService) {
-        this.appService = appService;
+    redisService;
+    constructor(redisService) {
+        this.redisService = redisService;
     }
-    getHealth() {
-        return this.appService.getHealth();
+    async getHealth() {
+        const redisHealthy = await this.redisService.isHealthy();
+        return {
+            service: 'tohdah-api',
+            status: 'ok',
+            redis: redisHealthy ? 'connected' : 'unavailable',
+            timestamp: new Date().toISOString(),
+        };
     }
 };
 exports.AppController = AppController;
@@ -26,10 +33,11 @@ __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AppController.prototype, "getHealth", null);
 exports.AppController = AppController = __decorate([
+    (0, throttle_decorator_1.SkipAllThrottlers)(),
     (0, common_1.Controller)(),
-    __metadata("design:paramtypes", [app_service_1.AppService])
+    __metadata("design:paramtypes", [redis_service_1.RedisService])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map

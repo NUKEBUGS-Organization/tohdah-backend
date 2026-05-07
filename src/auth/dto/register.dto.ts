@@ -1,4 +1,14 @@
-import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Matches,
+  MinLength,
+} from 'class-validator';
+
+const ACCOUNT_TYPES = ['traveler', 'requester', 'both'] as const;
 
 export class RegisterDto {
   @IsString()
@@ -20,4 +30,9 @@ export class RegisterDto {
   @Matches(/[A-Za-z]/, { message: 'password must contain at least one letter' })
   @Matches(/[0-9]/, { message: 'password must contain at least one number' })
   password: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(ACCOUNT_TYPES)
+  accountType?: (typeof ACCOUNT_TYPES)[number];
 }

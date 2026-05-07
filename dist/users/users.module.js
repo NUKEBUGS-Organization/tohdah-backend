@@ -10,17 +10,31 @@ exports.UsersModule = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const user_schema_1 = require("./schemas/user.schema");
+const user_report_schema_1 = require("./schemas/user-report.schema");
+const booking_schema_1 = require("../bookings/schemas/booking.schema");
+const trip_schema_1 = require("../trips/schemas/trip.schema");
+const request_schema_1 = require("../requests/schemas/request.schema");
 const users_service_1 = require("./users.service");
+const users_controller_1 = require("./users.controller");
+const auth_module_1 = require("../auth/auth.module");
 let UsersModule = class UsersModule {
 };
 exports.UsersModule = UsersModule;
 exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            mongoose_1.MongooseModule.forFeature([{ name: user_schema_1.User.name, schema: user_schema_1.UserSchema }]),
+            mongoose_1.MongooseModule.forFeature([
+                { name: user_schema_1.User.name, schema: user_schema_1.UserSchema },
+                { name: user_report_schema_1.UserReport.name, schema: user_report_schema_1.UserReportSchema },
+                { name: booking_schema_1.Booking.name, schema: booking_schema_1.BookingSchema },
+                { name: trip_schema_1.Trip.name, schema: trip_schema_1.TripSchema },
+                { name: request_schema_1.Request.name, schema: request_schema_1.RequestSchema },
+            ]),
+            (0, common_1.forwardRef)(() => auth_module_1.AuthModule),
         ],
+        controllers: [users_controller_1.UsersController],
         providers: [users_service_1.UsersService],
-        exports: [users_service_1.UsersService],
+        exports: [users_service_1.UsersService, mongoose_1.MongooseModule],
     })
 ], UsersModule);
 //# sourceMappingURL=users.module.js.map

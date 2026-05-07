@@ -1,13 +1,135 @@
 import { Model } from 'mongoose';
-import { UserDocument } from './schemas/user.schema';
+import { UserDocument, AccountType, type AuthProvider } from './schemas/user.schema';
+import { BookingDocument } from '../bookings/schemas/booking.schema';
+import { TripDocument } from '../trips/schemas/trip.schema';
+import { RequestDocument } from '../requests/schemas/request.schema';
+import { UserReportDocument } from './schemas/user-report.schema';
+import type { UpdateProfileDto } from './dto/update-profile.dto';
+import type { ChangePasswordDto } from './dto/change-password.dto';
+import type { ChangeEmailDto } from './dto/change-email.dto';
+import type { ChangePhoneDto } from './dto/change-phone.dto';
+import type { ReportUserDto } from './dto/report-user.dto';
+import { RedisService } from '../common/redis/redis.service';
+export type MeProfileResponse = {
+    id: string;
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    accountType: AccountType | null;
+    profilePhoto: string | null;
+    bio: string | null;
+    location: string | null;
+    languages: string[];
+    travelPreferences: string[];
+    isEmailVerified: boolean;
+    isPhoneVerified: boolean;
+    isIdVerified: boolean;
+    isSelfieVerified: boolean;
+    rating: number;
+    reviewCount: number;
+    onboardingCompleted: boolean;
+    onboardingStep: number;
+    createdAt: Date | undefined;
+    authProvider: AuthProvider;
+};
+export type PublicProfileResponse = {
+    id: string;
+    fullName: string;
+    profilePhoto: string | null;
+    bio: string | null;
+    location: string | null;
+    languages: string[];
+    accountType: AccountType | null;
+    rating: number;
+    reviewCount: number;
+    createdAt: Date | undefined;
+    isEmailVerified: boolean;
+    isPhoneVerified: boolean;
+    isIdVerified: boolean;
+    isSelfieVerified: boolean;
+    completedBookingsCount: number;
+    supportDeliveriesCount: number;
+};
+export type UserStatsResponse = {
+    totalTrips: number;
+    activeTrips: number;
+    totalRequests: number;
+    completedDeliveries: number;
+    supportDeliveries: number;
+    totalEarnings: number;
+    totalSpent: number;
+    averageRating: number;
+    reviewCount: number;
+};
 export declare class UsersService {
     private userModel;
-    constructor(userModel: Model<UserDocument>);
+    private bookingModel;
+    private tripModel;
+    private requestModel;
+    private userReportModel;
+    private readonly redisService;
+    constructor(userModel: Model<UserDocument>, bookingModel: Model<BookingDocument>, tripModel: Model<TripDocument>, requestModel: Model<RequestDocument>, userReportModel: Model<UserReportDocument>, redisService: RedisService);
+    serializeMe(user: UserDocument): MeProfileResponse;
+    getMeProfile(userId: string): Promise<MeProfileResponse>;
     findByEmail(email: string): Promise<UserDocument | null>;
+    findById(id: string): Promise<UserDocument | null>;
+    requireUser(userId: string): Promise<UserDocument>;
+    generateUniqueReferralCode(): Promise<string>;
     create(data: {
         fullName: string;
         email: string;
         phoneNumber: string;
         password: string;
+        accountType?: AccountType;
     }): Promise<UserDocument>;
+    createGoogleUser(params: {
+        googleId: string;
+        email: string;
+        fullName: string;
+        profilePhoto: string | null;
+        authProvider: AuthProvider;
+        isEmailVerified: boolean;
+    }): Promise<UserDocument>;
+    updateGoogleId(userId: string, googleId: string): Promise<void>;
+    findByGoogleId(googleId: string): Promise<UserDocument | null>;
+    updateProfile(userId: string, dto: UpdateProfileDto): Promise<MeProfileResponse>;
+    updateRefreshTokenHash(userId: string, hash: string | null): Promise<void>;
+    setOtp(userId: string, code: string, expiry: Date): Promise<void>;
+    clearOtpFields(userId: string): Promise<void>;
+    updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
+    setPasswordFromPlain(userId: string, plain: string): Promise<void>;
+    comparePassword(plain: string, passwordHash: string): Promise<boolean>;
+    hashRefreshToken(token: string): Promise<string>;
+    compareRefreshToken(plainToken: string, storedHash: string | undefined): Promise<boolean>;
+    updateRatingSummary(userId: string, rating: number, reviewCount: number): Promise<void>;
+    setVerificationFlag(userId: string, field: 'email' | 'phone' | 'id' | 'selfie'): Promise<UserDocument | null>;
+    private requestCollection;
+    completedBookingsParticipantCount(userId: string): Promise<number>;
+    supportDeliveriesTravelerCount(userId: string): Promise<number>;
+    getPublicProfile(userId: string): Promise<PublicProfileResponse>;
+    private aggregateSum;
+    getStats(userId: string): Promise<UserStatsResponse>;
+    changePassword(userId: string, dto: ChangePasswordDto): Promise<{
+        message: string;
+    }>;
+    changeEmail(userId: string, dto: ChangeEmailDto): Promise<{
+        message: string;
+    }>;
+    changePhone(userId: string, dto: ChangePhoneDto): Promise<{
+        message: string;
+    }>;
+    blockUser(actorId: string, targetUserId: string): Promise<void>;
+    unblockUser(actorId: string, targetUserId: string): Promise<void>;
+    listBlocked(actorId: string): Promise<Array<{
+        id: string;
+        fullName: string;
+        profilePhoto: string | null;
+    }>>;
+    reportUser(reporterId: string, dto: ReportUserDto): Promise<{
+        message: string;
+    }>;
+    addFcmToken(userId: string, token: string): Promise<void>;
+    removeFcmToken(userId: string, token: string): Promise<void>;
+    getFcmTokens(userId: string): Promise<string[]>;
+    cleanInvalidFcmTokens(userId: string, invalidTokens: string[]): Promise<void>;
 }

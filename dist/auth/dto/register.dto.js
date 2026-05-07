@@ -11,11 +11,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegisterDto = void 0;
 const class_validator_1 = require("class-validator");
+const ACCOUNT_TYPES = ['traveler', 'requester', 'both'];
 class RegisterDto {
     fullName;
     email;
     phoneNumber;
     password;
+    accountType;
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
@@ -42,4 +44,10 @@ __decorate([
     (0, class_validator_1.Matches)(/[0-9]/, { message: 'password must contain at least one number' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(ACCOUNT_TYPES),
+    __metadata("design:type", Object)
+], RegisterDto.prototype, "accountType", void 0);
 //# sourceMappingURL=register.dto.js.map
