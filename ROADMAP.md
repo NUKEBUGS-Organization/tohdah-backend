@@ -21,10 +21,11 @@ The **Tohdah** platform ships a NestJS **REST API** under **`/api/v1`** (auth, t
 - **Firebase FCM push notifications** — Web push via `firebase-admin` + registered device tokens on users; foreground Mantine toasts + background service worker.
 - **Redis** — Refresh token hashes (`tohdah:refresh:{userId}:{jti}`) with rotation and multi-session support; password-reset OTP in Redis (`tohdah:otp:{email}`, 10m TTL); `GET/DELETE /users/sessions` for counts and revoke-all.
 - **Google OAuth** — Passport `google` strategy (`passport-google-oauth20`): `GET /auth/google` → Google → `GET /auth/google/callback` issues JWT + Redis refresh, redirects to `FRONTEND_URL/auth/google/callback` with tokens in query (`accessToken`, `refreshToken`, `isNewUser`); linking `googleId` on existing emails; new users get `authProvider: 'google'` + placeholder phone/password hash.
+- **Socket.io real-time** — WebSocket gateway for live chat (`chat:message`, typing indicators), in-app notifications (`notification:new`), and booking lifecycle updates (`booking:updated`); JWT auth on handshake; user rooms + per-booking chat rooms.
 
 ## Production blockers (remaining)
 
-1. **Real-time chat** — Today the web client polls; add **WebSockets** / Socket.io when product requires live delivery.
+1. **Live GPS** — Location sharing during in-transit deliveries (Phase 2).
 
 ## Phase 2 features (post-launch growth)
 

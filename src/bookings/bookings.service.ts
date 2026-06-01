@@ -18,6 +18,7 @@ import { DisputeDto } from './dto/dispute.dto';
 import { CancelBookingDto } from './dto/cancel-booking.dto';
 import { PayBookingDto } from './dto/pay-booking.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TohdahGateway } from '../gateway/tohdah.gateway';
 
 const BOOKING_REF_PREFIX = 'TDH-';
 const BOOKING_SUFFIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -55,7 +56,15 @@ export class BookingsService {
     @InjectModel(RequestEntity.name)
     private readonly requestModel: Model<RequestDocument>,
     private readonly notificationsService: NotificationsService,
+    private readonly gateway: TohdahGateway,
   ) {}
+
+  private emitBookingUpdate(booking: BookingDocument): void {
+    if (!booking.requesterId || !booking.travelerId) return;
+    const requesterId = booking.requesterId.toString();
+    const travelerId = booking.travelerId.toString();
+    this.gateway.emitBookingUpdate(requesterId, travelerId, booking);
+  }
 
   private notify(p: Promise<unknown>): void {
     void p.catch(() => undefined);
@@ -232,6 +241,8 @@ export class BookingsService {
       }),
     );
 
+    this.emitBookingUpdate(booking);
+
     return booking;
   }
 
@@ -268,6 +279,8 @@ export class BookingsService {
         metadata: { bookingId: bid, counterFee: dto.counterFee },
       }),
     );
+
+    this.emitBookingUpdate(booking);
 
     return booking;
   }
@@ -309,6 +322,8 @@ export class BookingsService {
       }),
     );
 
+    this.emitBookingUpdate(booking);
+
     return { message: 'Booking declined' };
   }
 
@@ -345,6 +360,8 @@ export class BookingsService {
         metadata: { bookingId: bid },
       }),
     );
+
+    this.emitBookingUpdate(booking);
 
     return booking;
   }
@@ -394,6 +411,8 @@ export class BookingsService {
         },
       }),
     );
+
+    this.emitBookingUpdate(booking);
   }
 
   async markInTransit(travelerUserId: string, bookingId: string): Promise<BookingDocument> {
@@ -425,6 +444,8 @@ export class BookingsService {
         metadata: { bookingId: bid },
       }),
     );
+
+    this.emitBookingUpdate(booking);
 
     return booking;
   }
@@ -467,6 +488,8 @@ export class BookingsService {
         metadata: { bookingId: bid },
       }),
     );
+
+    this.emitBookingUpdate(booking);
 
     return booking;
   }
@@ -522,6 +545,8 @@ export class BookingsService {
       );
     }
 
+    this.emitBookingUpdate(booking);
+
     return booking;
   }
 
@@ -563,6 +588,8 @@ export class BookingsService {
         }),
       );
     }
+
+    this.emitBookingUpdate(booking);
 
     return booking;
   }
@@ -614,6 +641,8 @@ export class BookingsService {
         metadata: { bookingId: bid },
       }),
     );
+
+    this.emitBookingUpdate(booking);
 
     return { message: 'Booking cancelled' };
   }

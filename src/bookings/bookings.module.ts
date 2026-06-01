@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RequestsModule } from '../requests/requests.module';
 import { TripsModule } from '../trips/trips.module';
+import { GatewayModule } from '../gateway/gateway.module';
 import { Booking, BookingSchema } from './schemas/booking.schema';
 import { BookingsService } from './bookings.service';
 import { BookingsController } from './bookings.controller';
@@ -15,6 +16,7 @@ import { BookingsController } from './bookings.controller';
     NotificationsModule,
     TripsModule,
     RequestsModule,
+    GatewayModule,
   ],
   controllers: [BookingsController],
   providers: [BookingsService],

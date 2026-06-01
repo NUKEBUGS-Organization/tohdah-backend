@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { FcmModule } from '../common/fcm/fcm.module';
+import { GatewayModule } from '../gateway/gateway.module';
 import { Notification, NotificationSchema } from './schemas/notification.schema';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
@@ -15,6 +16,7 @@ import { NotificationsController } from './notifications.controller';
     AuthModule,
     UsersModule,
     FcmModule,
+    GatewayModule,
   ],
   controllers: [NotificationsController],
   providers: [NotificationsService],

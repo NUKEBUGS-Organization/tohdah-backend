@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { FcmService } from '../common/fcm/fcm.service';
 import { UsersService } from '../users/users.service';
+import { TohdahGateway } from '../gateway/tohdah.gateway';
 import {
   Notification,
   NotificationDocument,
@@ -31,6 +32,7 @@ export class NotificationsService {
     private readonly notificationModel: Model<NotificationDocument>,
     private readonly fcmService: FcmService,
     private readonly usersService: UsersService,
+    private readonly gateway: TohdahGateway,
   ) {}
 
   async createNotification(
@@ -47,6 +49,8 @@ export class NotificationsService {
       body: payload.body,
       metadata: payload.metadata,
     });
+
+    this.gateway.emitNotification(uid.toString(), doc);
 
     void this.sendPush(uid.toString(), {
       title: payload.title,

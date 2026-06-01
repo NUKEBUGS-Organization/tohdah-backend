@@ -10,6 +10,7 @@ import { Trip } from '../trips/schemas/trip.schema';
 import { Request as RequestEntity } from '../requests/schemas/request.schema';
 import { BookingsService } from './bookings.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TohdahGateway } from '../gateway/tohdah.gateway';
 
 describe('BookingsService', () => {
   let service: BookingsService;
@@ -65,6 +66,9 @@ describe('BookingsService', () => {
     const notificationsService = {
       createNotification: jest.fn().mockResolvedValue({}),
     };
+    const gateway = {
+      emitBookingUpdate: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +80,7 @@ describe('BookingsService', () => {
           provide: NotificationsService,
           useValue: notificationsService,
         },
+        { provide: TohdahGateway, useValue: gateway },
       ],
     }).compile();
 

@@ -10,6 +10,7 @@ import { AdminService } from './admin.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 import { PaymentsModule } from '../payments/payments.module';
+import { GatewayModule } from '../gateway/gateway.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PaymentsModule } from '../payments/payments.module';
     BookingsModule,
     NotificationsModule,
     PaymentsModule,
+    GatewayModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard, SuperAdminGuard],

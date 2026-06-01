@@ -6,6 +6,7 @@ import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
 import { Message, MessageDocument } from './schemas/message.schema';
 import { BookingsService } from '../bookings/bookings.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TohdahGateway } from '../gateway/tohdah.gateway';
 import { ChatService } from './chat.service';
 
 describe('ChatService', () => {
@@ -28,6 +29,7 @@ describe('ChatService', () => {
   let notificationsService: jest.Mocked<
     Pick<NotificationsService, 'createNotification'>
   >;
+  let gateway: jest.Mocked<Pick<TohdahGateway, 'emitNewMessage'>>;
 
   const userOid = new Types.ObjectId();
   const otherOid = new Types.ObjectId();
@@ -60,6 +62,9 @@ describe('ChatService', () => {
     notificationsService = {
       createNotification: jest.fn().mockResolvedValue({}),
     };
+    gateway = {
+      emitNewMessage: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,6 +73,7 @@ describe('ChatService', () => {
         { provide: getModelToken(Booking.name), useValue: bookingModel },
         { provide: BookingsService, useValue: bookingsService },
         { provide: NotificationsService, useValue: notificationsService },
+        { provide: TohdahGateway, useValue: gateway },
       ],
     }).compile();
 
@@ -98,6 +104,10 @@ describe('ChatService', () => {
           type: 'new_message',
           userId: otherOid.toString(),
         }),
+      );
+      expect(gateway.emitNewMessage).toHaveBeenCalledWith(
+        bookingId,
+        populatedDoc,
       );
     });
 

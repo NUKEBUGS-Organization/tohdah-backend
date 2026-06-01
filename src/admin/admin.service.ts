@@ -20,6 +20,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import type { ResolveDisputeDto } from './dto/resolve-dispute.dto';
 import { PaymentsService } from '../payments/payments.service';
 import { RedisService } from '../common/redis/redis.service';
+import { TohdahGateway } from '../gateway/tohdah.gateway';
 
 function startOfUtcDay(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -66,6 +67,7 @@ export class AdminService {
     private readonly notificationsService: NotificationsService,
     private readonly paymentsService: PaymentsService,
     private readonly redisService: RedisService,
+    private readonly gateway: TohdahGateway,
   ) {}
 
   private requestCollection(): string {
@@ -294,6 +296,9 @@ export class AdminService {
         volunteerDeliveries: volunteerRows[0]?.n ?? 0,
         elderlyAssisted,
         communityChampions: communityChampions[0]?.n ?? 0,
+      },
+      realtime: {
+        connectedUsers: this.gateway.getConnectedUserCount(),
       },
     };
   }

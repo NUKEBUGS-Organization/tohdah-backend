@@ -34,6 +34,7 @@ describe('AdminService', () => {
     createNotification: jest.Mock;
   };
   let paymentsService: { refundPayment: jest.Mock };
+  let gateway: { getConnectedUserCount: jest.Mock };
 
   beforeEach(() => {
     userModel = {
@@ -84,6 +85,9 @@ describe('AdminService', () => {
     redisService = {
       deleteAllRefreshTokens: jest.fn().mockResolvedValue(undefined),
     };
+    gateway = {
+      getConnectedUserCount: jest.fn().mockReturnValue(0),
+    };
 
     service = new AdminService(
       userModel as never,
@@ -94,6 +98,7 @@ describe('AdminService', () => {
       notificationsService as never,
       paymentsService as never,
       redisService as never,
+      gateway as never,
     );
   });
 
@@ -140,6 +145,9 @@ describe('AdminService', () => {
         volunteerDeliveries: 0,
         elderlyAssisted: 0,
         communityChampions: 0,
+      },
+      realtime: {
+        connectedUsers: 0,
       },
     });
   });

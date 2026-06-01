@@ -301,7 +301,7 @@ Base path: `/bookings` (JWT).
 ### Frontend integration notes — Bookings
 
 - Treat booking as the **source of truth** for post-match state; derive UI steps from `status`.
-- **Live tracking (polling):** while the tracking UI is open, poll `GET /bookings/:id` every **10s** (see WebSocket note at end).
+- **Live tracking:** subscribe to `booking:updated` on the socket when the tracking screen is open; initial load via `GET /bookings/:id`.
 
 ---
 
@@ -333,7 +333,7 @@ Base path: `/chat` (JWT).
 
 ### Frontend integration notes — Chat
 
-- Poll `GET /chat/:bookingId/messages` every **5s** while the thread is open (see end of doc for WebSocket note).
+- Listen for `chat:message` on the socket when the thread is open; initial history via `GET /chat/:bookingId/messages`.
 - Store active `bookingId` in chat route state; clear interval on unmount.
 
 ---
@@ -363,7 +363,7 @@ Base path: `/notifications` (JWT).
 
 ### Frontend integration notes — Notifications
 
-- Poll `GET /notifications?isRead=false` every **30s** when the user is authenticated (or when bell is visible).
+- Listen for `notification:new` on the socket; initial load via `GET /notifications?isRead=false`.
 - Keep `unreadCount` in global UI state.
 
 ---
@@ -735,14 +735,48 @@ Normalize handling in one `handleApiError(err)` utility.
 
 ---
 
-## WebSocket / real-time note
+## WebSocket / real-time (Socket.io)
 
-Chat, notifications, and live booking tracking **do not use WebSockets** in this backend version. Use **HTTP polling** instead:
+The API and web app use **Socket.io** for live chat, notifications, and booking status updates. REST endpoints remain the source of truth; sockets push deltas to connected clients.
 
-| Feature | Endpoint | Suggested interval |
-|--------|----------|----------------------|
-| Chat (thread open) | `GET /chat/:bookingId/messages` | **5s** |
-| Notifications (app open) | `GET /notifications` (e.g. `isRead=false`) | **30s** |
-| Live tracking (screen open) | `GET /bookings/:id` | **10s** |
+### Connection
 
-**Upgrade path:** Socket.io (or similar) for chat typing, delivery updates, and notification push is planned but **not implemented** yet—keep polling logic behind small hooks (`usePoll`) so you can swap transport later.
+| Item | Value |
+|------|--------|
+| URL | Same origin as API host without `/api/v1` (e.g. `http://localhost:3000`) |
+| Auth | `auth: { token: <JWT access token> }` on connect |
+| Transports | `websocket`, `polling` (fallback) |
+
+### Client → server events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `chat:join` | `{ bookingId }` | Join a booking chat room |
+| `chat:leave` | `{ bookingId }` | Leave a booking chat room |
+| `chat:typing` | `{ bookingId }` | Signal typing started |
+| `chat:stop_typing` | `{ bookingId }` | Signal typing stopped |
+
+### Server → client events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `chat:message` | `Message` | New message in a joined chat room |
+| `chat:typing` | `{ userId, bookingId }` | Another participant is typing |
+| `chat:stop_typing` | `{ userId, bookingId }` | Typing stopped |
+| `notification:new` | `Notification` | New in-app notification for the user |
+| `booking:updated` | `Booking` | Booking status or fields changed (both parties) |
+
+### Health / admin
+
+- `GET /api/v1` health JSON includes `connectedUsers` (count of distinct users with an active socket).
+- Admin stats (`GET /admin/stats`) include `realtime.connectedUsers`.
+
+### Fallback
+
+If the socket is disconnected, use REST:
+
+| Feature | Endpoint |
+|--------|----------|
+| Chat history | `GET /chat/:bookingId/messages` |
+| Notifications | `GET /notifications` |
+| Booking status | `GET /bookings/:id` |

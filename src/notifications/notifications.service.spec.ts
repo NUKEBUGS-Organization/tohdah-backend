@@ -6,6 +6,7 @@ import { FcmService } from '../common/fcm/fcm.service';
 import { UsersService } from '../users/users.service';
 import { Notification, NotificationDocument } from './schemas/notification.schema';
 import { NotificationsService } from './notifications.service';
+import { TohdahGateway } from '../gateway/tohdah.gateway';
 
 function flushMicrotasks(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
@@ -24,6 +25,7 @@ describe('NotificationsService', () => {
     getFcmTokens: jest.Mock;
     cleanInvalidFcmTokens: jest.Mock;
   };
+  let gateway: { emitNotification: jest.Mock };
 
   const uid = new Types.ObjectId();
 
@@ -46,6 +48,7 @@ describe('NotificationsService', () => {
       getFcmTokens: jest.fn().mockResolvedValue([]),
       cleanInvalidFcmTokens: jest.fn().mockResolvedValue(undefined),
     };
+    gateway = { emitNotification: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,6 +59,7 @@ describe('NotificationsService', () => {
         },
         { provide: FcmService, useValue: fcmService },
         { provide: UsersService, useValue: usersService },
+        { provide: TohdahGateway, useValue: gateway },
       ],
     }).compile();
 
@@ -90,6 +94,7 @@ describe('NotificationsService', () => {
         metadata: { x: 1 },
       }),
     );
+    expect(gateway.emitNotification).toHaveBeenCalledWith(uid.toString(), saved);
   });
 
   it('createNotification triggers sendPush (non-blocking)', async () => {

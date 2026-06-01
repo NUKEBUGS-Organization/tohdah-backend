@@ -10,6 +10,7 @@ import { Message, MessageDocument } from './schemas/message.schema';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
 import { BookingsService } from '../bookings/bookings.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TohdahGateway } from '../gateway/tohdah.gateway';
 import { SendMessageDto } from './dto/send-message.dto';
 
 const SENDER_POPULATE = [
@@ -31,6 +32,7 @@ export class ChatService {
     @InjectModel(Booking.name) private readonly bookingModel: Model<BookingDocument>,
     private readonly bookingsService: BookingsService,
     private readonly notificationsService: NotificationsService,
+    private readonly gateway: TohdahGateway,
   ) {}
 
   private notifyAsync(p: Promise<unknown>): void {
@@ -66,6 +68,8 @@ export class ChatService {
     });
 
     const populated = await msg.populate([...SENDER_POPULATE]);
+
+    this.gateway.emitNewMessage(bookingId, populated);
 
     this.notifyAsync(
       this.notificationsService.createNotification({

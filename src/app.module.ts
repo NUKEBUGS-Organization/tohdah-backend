@@ -38,6 +38,7 @@ import { AdminModule } from './admin/admin.module';
 import { UploadModule } from './upload/upload.module';
 import { PaymentsModule } from './payments/payments.module';
 import { RedisModule } from './common/redis/redis.module';
+import { GatewayModule } from './gateway/gateway.module';
 
 @Module({
   imports: [
@@ -50,6 +51,9 @@ import { RedisModule } from './common/redis/redis.module';
           config.get<string>('MONGODB_URI') ??
           'mongodb://127.0.0.1:27017/tohdah',
         connectionFactory: (connection: import('mongoose').Connection) => {
+          if (connection.readyState === 1) {
+            Logger.log('MongoDB already connected', 'Mongoose');
+          }
           connection.on('connected', () =>
             Logger.log('MongoDB connected', 'Mongoose'),
           );
@@ -93,6 +97,7 @@ import { RedisModule } from './common/redis/redis.module';
     TrustModule,
     AdminModule,
     UploadModule,
+    GatewayModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

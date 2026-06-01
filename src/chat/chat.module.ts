@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '../auth/auth.module';
 import { BookingsModule } from '../bookings/bookings.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { GatewayModule } from '../gateway/gateway.module';
 import { Message, MessageSchema } from './schemas/message.schema';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
@@ -13,6 +14,7 @@ import { ChatController } from './chat.controller';
     AuthModule,
     BookingsModule,
     NotificationsModule,
+    GatewayModule,
   ],
   controllers: [ChatController],
   providers: [ChatService],
