@@ -10,6 +10,7 @@ import { Trip, TripDocument, PricingType, TripStatus } from './schemas/trip.sche
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { BrowseTripsQueryDto } from './dto/browse-trips-query.dto';
+import { isSameId } from '../common/utils/mongo-id.utils';
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -103,7 +104,7 @@ export class TripsService {
     if (!trip) {
       throw new NotFoundException('Trip not found');
     }
-    if (trip.travelerId.toString() !== travelerId) {
+    if (!isSameId(trip.travelerId, travelerId)) {
       throw new ForbiddenException('You can only edit your own trips');
     }
     if (trip.status === 'completed' || trip.status === 'cancelled') {
@@ -161,7 +162,7 @@ export class TripsService {
     if (!trip) {
       throw new NotFoundException('Trip not found');
     }
-    if (trip.travelerId.toString() !== travelerId) {
+    if (!isSameId(trip.travelerId, travelerId)) {
       throw new ForbiddenException('You can only cancel your own trips');
     }
     if (trip.status === 'cancelled') {

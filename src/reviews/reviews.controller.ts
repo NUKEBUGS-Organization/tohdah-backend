@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { ReviewsService } from './reviews.service';
@@ -16,6 +17,7 @@ export class ReviewsController {
     return this.reviewsService.create(user.userId, dto);
   }
 
+  @SkipAllThrottlers()
   @Get('my')
   getMy(
     @CurrentUser() user: RequestUser,
@@ -28,6 +30,7 @@ export class ReviewsController {
     );
   }
 
+  @SkipAllThrottlers()
   @Get('user/:userId')
   getForUser(
     @Param('userId') userId: string,
@@ -40,6 +43,7 @@ export class ReviewsController {
     );
   }
 
+  @SkipAllThrottlers()
   @Get('booking/:bookingId')
   getForBooking(
     @CurrentUser() user: RequestUser,

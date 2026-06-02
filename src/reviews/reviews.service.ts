@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Review, ReviewDocument } from './schemas/review.schema';
 import { BookingsService } from '../bookings/bookings.service';
+import { isSameId, toId } from '../common/utils/mongo-id.utils';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -71,17 +72,14 @@ export class ReviewsService {
       );
     }
 
-    const requesterOid = booking.requesterId.toString();
-    const travelerOid = booking.travelerId.toString();
     const revieweeOid = dto.revieweeId;
 
-    const otherParty =
-      userId === requesterOid
-        ? travelerOid
-        : userId === travelerOid
-          ? requesterOid
-          : null;
-    if (!otherParty || revieweeOid !== otherParty) {
+    const otherParty = isSameId(userId, booking.requesterId)
+      ? toId(booking.travelerId)
+      : isSameId(userId, booking.travelerId)
+        ? toId(booking.requesterId)
+        : null;
+    if (!otherParty || !isSameId(revieweeOid, otherParty)) {
       throw new BadRequestException('Invalid reviewee');
     }
 

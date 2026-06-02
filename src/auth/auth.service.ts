@@ -3,7 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { randomInt, randomUUID } from 'crypto';
 import { UsersService } from '../users/users.service';
@@ -53,7 +53,10 @@ export class AuthService {
       { sub: userId, email },
       {
         secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
-        expiresIn: '15m',
+        expiresIn: this.config.get<string>(
+          'JWT_ACCESS_EXPIRY',
+          '15m',
+        ) as JwtSignOptions['expiresIn'],
       },
     );
   }

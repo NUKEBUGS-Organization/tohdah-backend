@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { OnboardingService } from './onboarding.service';
@@ -18,6 +19,7 @@ export class OnboardingController {
     return this.onboardingService.completeStep(user.userId, dto);
   }
 
+  @SkipAllThrottlers()
   @Get('status')
   status(@CurrentUser() user: RequestUser) {
     return this.onboardingService.getStatus(user.userId);

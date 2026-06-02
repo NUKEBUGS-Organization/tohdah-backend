@@ -1,5 +1,6 @@
 import { Controller, Delete, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { NotificationsService } from './notifications.service';
@@ -10,6 +11,7 @@ import { GetNotificationsQueryDto } from './dto/get-notifications-query.dto';
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  @SkipAllThrottlers()
   @Get()
   list(
     @CurrentUser() user: RequestUser,

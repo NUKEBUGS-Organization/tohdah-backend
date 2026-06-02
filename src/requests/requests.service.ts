@@ -13,6 +13,7 @@ import {
   RequestStatus,
   UrgencyLevel,
 } from './schemas/request.schema';
+import { isSameId } from '../common/utils/mongo-id.utils';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { BrowseRequestsQueryDto } from './dto/browse-requests-query.dto';
@@ -199,7 +200,7 @@ export class RequestsService {
     if (!req) {
       throw new NotFoundException('Request not found');
     }
-    if (req.requesterId.toString() !== requesterId) {
+    if (!isSameId(req.requesterId, requesterId)) {
       throw new ForbiddenException('You can only edit your own requests');
     }
     if (req.status !== 'pending') {
@@ -259,7 +260,7 @@ export class RequestsService {
     if (!req) {
       throw new NotFoundException('Request not found');
     }
-    if (req.requesterId.toString() !== requesterId) {
+    if (!isSameId(req.requesterId, requesterId)) {
       throw new ForbiddenException('You can only cancel your own requests');
     }
     if (req.status !== 'pending' && req.status !== 'matched') {

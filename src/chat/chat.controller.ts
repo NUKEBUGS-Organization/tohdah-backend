@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { ChatService } from './chat.service';
@@ -20,11 +21,13 @@ import { GetMessagesQueryDto } from './dto/get-messages-query.dto';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
+  @SkipAllThrottlers()
   @Get('my')
   getMy(@CurrentUser() user: RequestUser) {
     return this.chatService.getMyConversations(user.userId);
   }
 
+  @SkipAllThrottlers()
   @Get(':bookingId/messages')
   getMessages(
     @CurrentUser() user: RequestUser,

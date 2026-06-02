@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { BookingsService } from './bookings.service';
@@ -29,6 +30,7 @@ export class BookingsController {
     return this.bookingsService.createMatch(user.userId, dto);
   }
 
+  @SkipAllThrottlers()
   @Get('my')
   getMy(@CurrentUser() user: RequestUser, @Query() query: GetMyBookingsQueryDto) {
     return this.bookingsService.findMyBookings(user.userId, {
@@ -39,6 +41,7 @@ export class BookingsController {
     });
   }
 
+  @SkipAllThrottlers()
   @Get(':id')
   findOne(@CurrentUser() user: RequestUser, @Param('id') id: string) {
     return this.bookingsService.findOneForParty(id, user.userId);

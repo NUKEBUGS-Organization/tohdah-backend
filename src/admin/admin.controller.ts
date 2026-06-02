@@ -18,6 +18,7 @@ import { BanUserDto, SuspendUserDto } from './dto/suspend-ban.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
 import { ApproveSupportDto, RejectSupportDto } from './dto/support-notes.dto';
+import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 
 function optInt(v?: string): number | undefined {
   if (v === undefined || v === '') return undefined;
@@ -43,17 +44,17 @@ export class AdminController {
   }
 
   @Get('users')
-  listUsers(@Query() q: Record<string, string | undefined>) {
+  listUsers(@Query() q: AdminUsersQueryDto) {
     return this.adminService.listUsers({
       search: q.search,
       role: q.role,
       accountType: q.accountType,
       status: q.status,
-      isVerified: optBool(q.isVerified),
+      isVerified: q.isVerified,
       dateFrom: q.dateFrom,
       dateTo: q.dateTo,
-      page: optInt(q.page),
-      limit: optInt(q.limit),
+      page: q.page,
+      limit: q.limit,
     });
   }
 

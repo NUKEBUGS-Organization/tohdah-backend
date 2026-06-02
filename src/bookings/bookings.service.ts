@@ -19,6 +19,11 @@ import { CancelBookingDto } from './dto/cancel-booking.dto';
 import { PayBookingDto } from './dto/pay-booking.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TohdahGateway } from '../gateway/tohdah.gateway';
+import {
+  isBookingParty,
+  isSameId,
+  toId,
+} from '../common/utils/mongo-id.utils';
 
 const BOOKING_REF_PREFIX = 'TDH-';
 const BOOKING_SUFFIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -61,8 +66,8 @@ export class BookingsService {
 
   private emitBookingUpdate(booking: BookingDocument): void {
     if (!booking.requesterId || !booking.travelerId) return;
-    const requesterId = booking.requesterId.toString();
-    const travelerId = booking.travelerId.toString();
+    const requesterId = toId(booking.requesterId);
+    const travelerId = toId(booking.travelerId);
     this.gateway.emitBookingUpdate(requesterId, travelerId, booking);
   }
 
@@ -121,7 +126,7 @@ export class BookingsService {
     if (!request) {
       throw new BadRequestException('Request not found');
     }
-    if (request.requesterId.toString() !== requesterUserId) {
+    if (!isSameId(request.requesterId, requesterUserId)) {
       throw new ForbiddenException('You can only match your own requests');
     }
     if (request.status !== 'pending') {
@@ -208,7 +213,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    if (booking.travelerId.toString() !== travelerUserId) {
+    if (!isSameId(booking.travelerId, travelerUserId)) {
       throw new ForbiddenException('Only the traveler can accept this booking');
     }
     if (
@@ -229,6 +234,10 @@ export class BookingsService {
     this.applyCommission(booking, agreed);
     booking.status = 'confirmed';
     await booking.save();
+
+    await this.requestModel
+      .findByIdAndUpdate(booking.requestId, { $set: { status: 'confirmed' } })
+      .exec();
 
     const bid = booking._id.toString();
     this.notify(
@@ -255,7 +264,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    if (booking.travelerId.toString() !== travelerUserId) {
+    if (!isSameId(booking.travelerId, travelerUserId)) {
       throw new ForbiddenException('Only the traveler can counter this booking');
     }
     if (booking.status !== 'pending_acceptance') {
@@ -293,7 +302,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    if (booking.travelerId.toString() !== travelerUserId) {
+    if (!isSameId(booking.travelerId, travelerUserId)) {
       throw new ForbiddenException('Only the traveler can decline this booking');
     }
     if (
@@ -335,7 +344,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    if (booking.requesterId.toString() !== requesterUserId) {
+    if (!isSameId(booking.requesterId, requesterUserId)) {
       throw new ForbiddenException('Only the requester can accept the counter offer');
     }
     if (booking.status !== 'countered') {
@@ -349,6 +358,10 @@ export class BookingsService {
     this.applyCommission(booking, counter);
     booking.status = 'confirmed';
     await booking.save();
+
+    await this.requestModel
+      .findByIdAndUpdate(booking.requestId, { $set: { status: 'confirmed' } })
+      .exec();
 
     const bid = booking._id.toString();
     this.notify(
@@ -420,7 +433,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    if (booking.travelerId.toString() !== travelerUserId) {
+    if (!isSameId(booking.travelerId, travelerUserId)) {
       throw new ForbiddenException('Only the traveler can mark in transit');
     }
     if (booking.status !== 'paid') {
@@ -459,7 +472,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    if (booking.travelerId.toString() !== travelerUserId) {
+    if (!isSameId(booking.travelerId, travelerUserId)) {
       throw new ForbiddenException('Only the traveler can submit proof of delivery');
     }
     if (booking.status !== 'in_transit') {
@@ -502,7 +515,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    if (booking.requesterId.toString() !== requesterUserId) {
+    if (!isSameId(booking.requesterId, requesterUserId)) {
       throw new ForbiddenException('Only the requester can complete this booking');
     }
     if (booking.status !== 'delivered') {
@@ -520,10 +533,7 @@ export class BookingsService {
     await this.maybeCompleteTrip(booking.tripId);
 
     const bid = booking._id.toString();
-    const parties = [
-      booking.requesterId.toString(),
-      booking.travelerId.toString(),
-    ];
+    const parties = [toId(booking.requesterId), toId(booking.travelerId)];
     for (const uid of parties) {
       this.notify(
         this.notificationsService.createNotification({
@@ -559,9 +569,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    const uid = booking.requesterId.toString();
-    const tid = booking.travelerId.toString();
-    if (userId !== uid && userId !== tid) {
+    if (!isBookingParty(userId, booking.requesterId, booking.travelerId)) {
       throw new ForbiddenException('Only parties on the booking can raise a dispute');
     }
 
@@ -577,7 +585,7 @@ export class BookingsService {
     await booking.save();
 
     const bid = booking._id.toString();
-    for (const uid of [booking.requesterId.toString(), booking.travelerId.toString()]) {
+    for (const uid of [toId(booking.requesterId), toId(booking.travelerId)]) {
       this.notify(
         this.notificationsService.createNotification({
           userId: uid,
@@ -603,9 +611,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    const uid = booking.requesterId.toString();
-    const tid = booking.travelerId.toString();
-    if (userId !== uid && userId !== tid) {
+    if (!isBookingParty(userId, booking.requesterId, booking.travelerId)) {
       throw new ForbiddenException('Only parties on the booking can cancel');
     }
 
@@ -628,10 +634,9 @@ export class BookingsService {
     await this.revertMatch(booking);
 
     const bid = booking._id.toString();
-    const otherUserId =
-      userId === booking.requesterId.toString()
-        ? booking.travelerId.toString()
-        : booking.requesterId.toString();
+    const otherUserId = isSameId(userId, booking.requesterId)
+      ? toId(booking.travelerId)
+      : toId(booking.requesterId);
     this.notify(
       this.notificationsService.createNotification({
         userId: otherUserId,
@@ -714,10 +719,8 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    const uid = booking.requesterId.toString();
-    const tid = booking.travelerId.toString();
-    if (userId !== uid && userId !== tid) {
-      throw new ForbiddenException('You do not have access to this booking');
+    if (!isBookingParty(userId, booking.requesterId, booking.travelerId)) {
+      throw new ForbiddenException('You are not a party to this booking');
     }
     return booking;
   }

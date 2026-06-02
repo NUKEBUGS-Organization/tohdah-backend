@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   ForbiddenException,
   Headers,
@@ -17,6 +18,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { BookingsService } from '../bookings/bookings.service';
 import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
+import { isSameId } from '../common/utils/mongo-id.utils';
+import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
 import { PaymentsService } from './payments.service';
 
 @Controller('payments')
@@ -27,6 +30,7 @@ export class PaymentsController {
     private readonly config: ConfigService,
   ) {}
 
+  @SkipAllThrottlers()
   @Post('intent/:bookingId')
   @UseGuards(JwtAuthGuard)
   async createIntent(
@@ -42,7 +46,7 @@ export class PaymentsController {
         'Booking must be confirmed before payment',
       );
     }
-    if (booking.requesterId.toString() !== user.userId) {
+    if (!isSameId(booking.requesterId, user.userId)) {
       throw new ForbiddenException('Only the requester can initiate payment');
     }
     const fee = booking.agreedFee ?? booking.counterFee ?? booking.offeredFee;
@@ -58,8 +62,36 @@ export class PaymentsController {
     });
   }
 
-  @Post('webhook')
+  /**
+   * Client-side confirmation after Stripe.js succeeds (dev fallback when
+   * webhooks are not forwarded, e.g. missing `stripe listen`).
+   */
   @SkipAllThrottlers()
+  @Post('confirm')
+  @UseGuards(JwtAuthGuard)
+  async confirmPayment(
+    @CurrentUser() user: RequestUser,
+    @Body() dto: ConfirmPaymentDto,
+  ) {
+    const bookingId = await this.paymentsService.resolveSucceededPaymentBookingId(
+      dto.paymentIntentId,
+    );
+    const booking = await this.bookingsService.findOneForParty(
+      bookingId,
+      user.userId,
+    );
+    if (!isSameId(booking.requesterId, user.userId)) {
+      throw new ForbiddenException('Only the requester can confirm payment');
+    }
+    await this.bookingsService.markAsPaidFromWebhook(
+      bookingId,
+      dto.paymentIntentId,
+    );
+    return this.bookingsService.findOneForParty(bookingId, user.userId);
+  }
+
+  @SkipAllThrottlers()
+  @Post('webhook')
   async handleWebhook(
     @Req() req: RawBodyRequest<Request>,
     @Headers('stripe-signature') signature: string | undefined,
@@ -80,7 +112,7 @@ export class PaymentsController {
 
     if (event.type === 'payment_intent.succeeded') {
       const intent = event.data.object;
-      const bookingId = await this.paymentsService.handlePaymentSuccess(
+      const bookingId = await this.paymentsService.resolveSucceededPaymentBookingId(
         intent.id,
       );
       await this.bookingsService.markAsPaidFromWebhook(bookingId, intent.id);

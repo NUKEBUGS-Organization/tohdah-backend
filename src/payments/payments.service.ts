@@ -46,14 +46,26 @@ export class PaymentsService {
     };
   }
 
-  async handlePaymentSuccess(paymentIntentId: string): Promise<string> {
+  async resolveSucceededPaymentBookingId(
+    paymentIntentId: string,
+  ): Promise<string> {
     const stripe = this.getStripe();
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (intent.status !== 'succeeded') {
+      throw new BadRequestException(
+        `Payment is not complete (status: ${intent.status})`,
+      );
+    }
     const bookingId = intent.metadata?.bookingId;
     if (!bookingId) {
-      throw new Error('PaymentIntent missing bookingId metadata');
+      throw new BadRequestException('PaymentIntent missing bookingId metadata');
     }
     return bookingId;
+  }
+
+  /** @deprecated use resolveSucceededPaymentBookingId */
+  async handlePaymentSuccess(paymentIntentId: string): Promise<string> {
+    return this.resolveSucceededPaymentBookingId(paymentIntentId);
   }
 
   async refundPayment(params: {

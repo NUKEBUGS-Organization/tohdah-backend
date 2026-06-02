@@ -12,6 +12,7 @@ import { BookingsService } from '../bookings/bookings.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TohdahGateway } from '../gateway/tohdah.gateway';
 import { SendMessageDto } from './dto/send-message.dto';
+import { isSameId, toId } from '../common/utils/mongo-id.utils';
 
 const SENDER_POPULATE = [
   {
@@ -54,10 +55,10 @@ export class ChatService {
       throw new BadRequestException('Cannot message on a cancelled booking');
     }
 
-    const receiverId =
-      userId === booking.requesterId.toString()
-        ? (booking.travelerId as Types.ObjectId)
-        : (booking.requesterId as Types.ObjectId);
+    const receiverRef = isSameId(userId, booking.requesterId)
+      ? booking.travelerId
+      : booking.requesterId;
+    const receiverId = new Types.ObjectId(toId(receiverRef));
 
     const msg = await this.messageModel.create({
       bookingId: new Types.ObjectId(bookingId),
@@ -73,7 +74,7 @@ export class ChatService {
 
     this.notifyAsync(
       this.notificationsService.createNotification({
-        userId: receiverId.toString(),
+        userId: toId(receiverRef),
         type: 'new_message',
         title: 'New message',
         body: this.previewBody(dto.content.trim()),
@@ -216,7 +217,7 @@ export class ChatService {
     if (!msg) {
       throw new NotFoundException('Message not found');
     }
-    if (msg.receiverId.toString() !== userId) {
+    if (!isSameId(msg.receiverId, userId)) {
       throw new ForbiddenException('Only the receiver can mark this message read');
     }
     msg.isRead = true;

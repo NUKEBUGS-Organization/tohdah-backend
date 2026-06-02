@@ -23,6 +23,7 @@ import {
 } from '../requests/schemas/request.schema';
 import { UserReport, UserReportDocument } from './schemas/user-report.schema';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
+import { isSameId } from '../common/utils/mongo-id.utils';
 import type { ChangePasswordDto } from './dto/change-password.dto';
 import type { ChangeEmailDto } from './dto/change-email.dto';
 import type { ChangePhoneDto } from './dto/change-phone.dto';
@@ -557,7 +558,7 @@ export class UsersService {
     }
 
     const blocked = actor.blockedUsers ?? [];
-    if (blocked.some((id) => id.toString() === tid)) {
+    if (blocked.some((id) => isSameId(id, tid))) {
       return;
     }
     blocked.push(new Types.ObjectId(tid));

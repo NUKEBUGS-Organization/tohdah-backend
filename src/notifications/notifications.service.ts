@@ -14,6 +14,7 @@ import {
   NotificationDocument,
   NotificationType,
 } from './schemas/notification.schema';
+import { isSameId } from '../common/utils/mongo-id.utils';
 
 export type CreateNotificationPayload = {
   userId: string | Types.ObjectId;
@@ -156,7 +157,7 @@ export class NotificationsService {
     if (!n) {
       throw new NotFoundException('Notification not found');
     }
-    if (n.userId.toString() !== userId) {
+    if (!isSameId(n.userId, userId)) {
       throw new ForbiddenException('You do not own this notification');
     }
     n.isRead = true;
@@ -188,7 +189,7 @@ export class NotificationsService {
     if (!n) {
       throw new NotFoundException('Notification not found');
     }
-    if (n.userId.toString() !== userId) {
+    if (!isSameId(n.userId, userId)) {
       throw new ForbiddenException('You do not own this notification');
     }
     await this.notificationModel.deleteOne({ _id: n._id }).exec();

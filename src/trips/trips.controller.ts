@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { TripsService } from './trips.service';
@@ -28,6 +29,7 @@ export class TripsController {
     return this.tripsService.create(user.userId, dto);
   }
 
+  @SkipAllThrottlers()
   @Get('my')
   getMyTrips(
     @CurrentUser() user: RequestUser,
@@ -36,11 +38,13 @@ export class TripsController {
     return this.tripsService.getMyTrips(user.userId, query.status);
   }
 
+  @SkipAllThrottlers()
   @Get('browse')
   browse(@Query() query: BrowseTripsQueryDto) {
     return this.tripsService.browse(query);
   }
 
+  @SkipAllThrottlers()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.tripsService.findByIdOrThrow(id);

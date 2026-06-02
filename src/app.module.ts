@@ -76,7 +76,7 @@ import { GatewayModule } from './gateway/gateway.module';
           {
             name: 'global',
             ttl: config.get<number>('THROTTLE_TTL_MS', 60_000),
-            limit: config.get<number>('THROTTLE_LIMIT', 60),
+            limit: config.get<number>('THROTTLE_LIMIT', 300),
           },
           { name: 'auth', ttl: 60_000, limit: 5 },
           { name: 'sensitive', ttl: 60_000, limit: 3 },

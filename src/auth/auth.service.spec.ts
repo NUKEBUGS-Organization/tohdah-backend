@@ -10,7 +10,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let users: jest.Mocked<Partial<UsersService>>;
   let jwt: jest.Mocked<Pick<JwtService, 'signAsync' | 'verifyAsync'>>;
-  let config: { getOrThrow: jest.Mock };
+  let config: { get: jest.Mock; getOrThrow: jest.Mock };
   let email: {
     sendWelcome: jest.Mock;
     sendPasswordReset: jest.Mock;
@@ -65,6 +65,9 @@ describe('AuthService', () => {
       verifyAsync: jest.fn(),
     };
     config = {
+      get: jest.fn((key: string) =>
+        key === 'JWT_ACCESS_EXPIRY' ? '15m' : undefined,
+      ),
       getOrThrow: jest.fn((key: string) => `secret-for-${key}`),
     };
     email = {

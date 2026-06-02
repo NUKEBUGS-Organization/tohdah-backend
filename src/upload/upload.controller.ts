@@ -1,3 +1,4 @@
+import '../env-loader';
 import {
   Controller,
   Post,
@@ -10,6 +11,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage, memoryStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import type { Request } from 'express';
 import { UploadThrottle } from '../common/decorators/throttle.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -31,7 +33,13 @@ function imageDiskStorage(
 ) {
   return diskStorage({
     destination: (_req, _file, cb) => {
-      cb(null, path.join(resolveUploadRootFromEnv(), subdir));
+      const dir = path.join(resolveUploadRootFromEnv(), subdir);
+      try {
+        fsSync.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      } catch (err) {
+        cb(err as Error, dir);
+      }
     },
     filename: (req, file, cb) => {
       try {
@@ -43,7 +51,10 @@ function imageDiskStorage(
   });
 }
 
-function multerImageOptions(subdir: UploadSubdir, filename: (req: Request, file: Express.Multer.File) => string) {
+function multerImageOptions(
+  subdir: UploadSubdir,
+  filename: (req: Request, file: Express.Multer.File) => string,
+) {
   const useCloud = resolveUseCloudStorageFromEnv();
   return {
     limits: { fileSize: resolveMaxUploadBytesFromEnv() },

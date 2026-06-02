@@ -1,3 +1,4 @@
+import '../env-loader';
 import {
   BadRequestException,
   Injectable,
@@ -7,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as path from 'path';
 
 const SUBDIRS = ['avatars', 'delivery', 'items', 'chat'] as const;
@@ -26,7 +28,8 @@ export function resolveMaxUploadBytesFromEnv(): number {
 }
 
 export function resolveUseCloudStorageFromEnv(): boolean {
-  return process.env.USE_CLOUD_STORAGE === 'true';
+  const raw = (process.env.USE_CLOUD_STORAGE ?? 'false').trim().toLowerCase();
+  return raw === 'true' || raw === '1' || raw === 'yes';
 }
 
 @Injectable()
@@ -56,15 +59,18 @@ export class UploadService implements OnModuleInit {
     this.allowedMimeTypes = new Set(
       types.split(',').map((t) => t.trim().toLowerCase()),
     );
-    this.useCloud =
-      this.config.get<string>('USE_CLOUD_STORAGE') === 'true' ||
-      resolveUseCloudStorageFromEnv();
+    this.useCloud = resolveUseCloudStorageFromEnv();
     if (this.useCloud) {
       cloudinary.config({
         cloud_name: this.config.getOrThrow<string>('CLOUDINARY_CLOUD_NAME'),
         api_key: this.config.getOrThrow<string>('CLOUDINARY_API_KEY'),
         api_secret: this.config.getOrThrow<string>('CLOUDINARY_API_SECRET'),
       });
+      this.logger.log(
+        `Upload service: useCloud=true, cloudName=${this.config.get<string>('CLOUDINARY_CLOUD_NAME') ?? '(unset)'}`,
+      );
+    } else {
+      this.logger.log('Upload service: useCloud=false (local disk storage)');
     }
   }
 
@@ -72,6 +78,11 @@ export class UploadService implements OnModuleInit {
     void this.ensureDirectories();
   }
 
+  isCloud(): boolean {
+    return this.useCloud;
+  }
+
+  /** @deprecated Prefer `isCloud()` */
   isCloudStorageEnabled(): boolean {
     return this.useCloud;
   }
@@ -89,7 +100,9 @@ export class UploadService implements OnModuleInit {
     if (this.useCloud) return;
     await fs.mkdir(this.uploadRoot, { recursive: true });
     for (const d of SUBDIRS) {
-      await fs.mkdir(path.join(this.uploadRoot, d), { recursive: true });
+      const fullPath = path.join(this.uploadRoot, d);
+      await fs.mkdir(fullPath, { recursive: true });
+      this.logger.log(`Upload dir ready: ${fullPath}`);
     }
   }
 
@@ -109,6 +122,11 @@ export class UploadService implements OnModuleInit {
       const name =
         file.filename ??
         (file.path ? path.basename(file.path) : `upload-${Date.now()}`);
+      if (file.buffer?.length && !file.path) {
+        await this.ensureDirectories();
+        const abs = path.join(this.uploadRoot, folder, name);
+        await fs.writeFile(abs, file.buffer);
+      }
       return this.getFilePath(folder, name);
     }
     const buf = file.buffer;

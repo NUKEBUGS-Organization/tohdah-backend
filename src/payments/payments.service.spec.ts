@@ -64,14 +64,27 @@ describe('PaymentsService', () => {
     );
   });
 
-  it('handlePaymentSuccess returns bookingId from metadata', async () => {
+  it('resolveSucceededPaymentBookingId returns bookingId from metadata', async () => {
     stripeInstance.paymentIntents.retrieve.mockResolvedValue({
       id: 'pi_1',
+      status: 'succeeded',
       metadata: { bookingId: 'booking-abc' },
     } as Stripe.PaymentIntent);
 
-    const id = await service.handlePaymentSuccess('pi_1');
+    const id = await service.resolveSucceededPaymentBookingId('pi_1');
     expect(id).toBe('booking-abc');
+  });
+
+  it('resolveSucceededPaymentBookingId rejects non-succeeded status', async () => {
+    stripeInstance.paymentIntents.retrieve.mockResolvedValue({
+      id: 'pi_1',
+      status: 'processing',
+      metadata: { bookingId: 'booking-abc' },
+    } as Stripe.PaymentIntent);
+
+    await expect(service.resolveSucceededPaymentBookingId('pi_1')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('refundPayment passes partial amount in cents', async () => {

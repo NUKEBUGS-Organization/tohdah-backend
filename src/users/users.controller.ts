@@ -19,6 +19,7 @@ import { ChangePhoneDto } from './dto/change-phone.dto';
 import { ReportUserDto } from './dto/report-user.dto';
 import { RegisterFcmTokenDto } from './dto/register-fcm-token.dto';
 import { RedisService } from '../common/redis/redis.service';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -60,6 +61,7 @@ export class UsersController {
     return this.usersService.changePhone(user.userId, dto);
   }
 
+  @SkipAllThrottlers()
   @Get('blocked')
   listBlocked(@CurrentUser() user: RequestUser) {
     return this.usersService.listBlocked(user.userId);
@@ -110,6 +112,7 @@ export class UsersController {
       .then(() => ({ message: 'FCM token removed' }));
   }
 
+  @SkipAllThrottlers()
   @Get('sessions')
   getActiveSessions(@CurrentUser() user: RequestUser) {
     return this.redisService
@@ -126,11 +129,13 @@ export class UsersController {
       }));
   }
 
+  @SkipAllThrottlers()
   @Get(':userId/profile')
   getProfile(@Param('userId') userId: string) {
     return this.usersService.getPublicProfile(userId);
   }
 
+  @SkipAllThrottlers()
   @Get(':userId/stats')
   getStats(@Param('userId') userId: string) {
     return this.usersService.getStats(userId);

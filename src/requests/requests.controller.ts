@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { RequestsService } from './requests.service';
@@ -28,6 +29,7 @@ export class RequestsController {
     return this.requestsService.create(user.userId, dto);
   }
 
+  @SkipAllThrottlers()
   @Get('my')
   getMyRequests(
     @CurrentUser() user: RequestUser,
@@ -40,11 +42,13 @@ export class RequestsController {
     );
   }
 
+  @SkipAllThrottlers()
   @Get('browse')
   browse(@Query() query: BrowseRequestsQueryDto) {
     return this.requestsService.browse(query);
   }
 
+  @SkipAllThrottlers()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.requestsService.findByIdOrThrow(id);

@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Patch, Body, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SkipAllThrottlers } from '../common/decorators/throttle.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/strategies/jwt-access.strategy';
 import { TrustService } from './trust.service';
@@ -10,16 +11,19 @@ import { VerifyFieldDto } from './dto/verify-field.dto';
 export class TrustController {
   constructor(private readonly trustService: TrustService) {}
 
+  @SkipAllThrottlers()
   @Get('me')
   getMine(@CurrentUser() user: RequestUser) {
     return this.trustService.getTrustResult(user.userId);
   }
 
+  @SkipAllThrottlers()
   @Get('user/:userId')
   getUser(@Param('userId') userId: string) {
     return this.trustService.getTrustResult(userId);
   }
 
+  @SkipAllThrottlers()
   @Get('badges/:userId')
   badges(@Param('userId') userId: string) {
     return this.trustService.getBadges(userId);
