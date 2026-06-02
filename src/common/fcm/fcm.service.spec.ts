@@ -47,14 +47,18 @@ describe('FcmService', () => {
     jest.clearAllMocks();
   });
 
-  async function createService(): Promise<FcmService> {
+  async function createService(
+    configGet?: (key: string, def?: string) => string | undefined,
+  ): Promise<FcmService> {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FcmService,
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((_k: string, def?: string) => def),
+            get: jest.fn((k: string, def?: string) =>
+              configGet ? configGet(k, def) : def,
+            ),
           },
         },
       ],
@@ -134,5 +138,14 @@ describe('FcmService', () => {
     });
     const service = await createService();
     expect(service.isAvailable()).toBe(false);
+  });
+
+  it('initializes from FIREBASE_SERVICE_ACCOUNT_JSON without reading file', async () => {
+    const service = await createService((key) => {
+      if (key === 'FIREBASE_SERVICE_ACCOUNT_JSON') return goodAccountJson;
+      return undefined;
+    });
+    expect(service.isAvailable()).toBe(true);
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 });

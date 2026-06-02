@@ -26,17 +26,24 @@ export class FcmService {
   private app?: admin.app.App;
 
   constructor(private readonly config: ConfigService) {
-    const serviceAccountPath = resolve(
-      this.config.get<string>(
-        'FIREBASE_SERVICE_ACCOUNT_PATH',
-        './firebase-service-account.json',
-      ),
+    const serviceAccountJson = this.config.get<string>(
+      'FIREBASE_SERVICE_ACCOUNT_JSON',
+    );
+    const serviceAccountPath = this.config.get<string>(
+      'FIREBASE_SERVICE_ACCOUNT_PATH',
+      './firebase-service-account.json',
     );
 
     try {
-      const serviceAccount = JSON.parse(
-        readFileSync(serviceAccountPath, 'utf8'),
-      ) as admin.ServiceAccount;
+      let serviceAccount: admin.ServiceAccount;
+
+      if (serviceAccountJson) {
+        serviceAccount = JSON.parse(serviceAccountJson) as admin.ServiceAccount;
+      } else {
+        serviceAccount = JSON.parse(
+          readFileSync(resolve(serviceAccountPath), 'utf8'),
+        ) as admin.ServiceAccount;
+      }
 
       if (!admin.apps.length) {
         this.app = admin.initializeApp({
@@ -46,10 +53,13 @@ export class FcmService {
         this.app = admin.app();
       }
     } catch (err) {
+      const source = serviceAccountJson
+        ? 'FIREBASE_SERVICE_ACCOUNT_JSON'
+        : `FIREBASE_SERVICE_ACCOUNT_PATH (${resolve(serviceAccountPath)})`;
       this.logger.warn(
         'Firebase service account not found or invalid. ' +
           'Push notifications will be disabled. ' +
-          `Path: ${serviceAccountPath} (${firebaseErrorMessage(err)})`,
+          `Source: ${source} (${firebaseErrorMessage(err)})`,
       );
     }
   }
