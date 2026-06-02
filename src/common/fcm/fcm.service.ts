@@ -29,37 +29,37 @@ export class FcmService {
     const serviceAccountJson = this.config.get<string>(
       'FIREBASE_SERVICE_ACCOUNT_JSON',
     );
-    const serviceAccountPath = this.config.get<string>(
-      'FIREBASE_SERVICE_ACCOUNT_PATH',
-      './firebase-service-account.json',
-    );
+
+    let serviceAccount: object;
 
     try {
-      let serviceAccount: admin.ServiceAccount;
-
       if (serviceAccountJson) {
-        serviceAccount = JSON.parse(serviceAccountJson) as admin.ServiceAccount;
+        serviceAccount = JSON.parse(serviceAccountJson);
       } else {
-        serviceAccount = JSON.parse(
-          readFileSync(resolve(serviceAccountPath), 'utf8'),
-        ) as admin.ServiceAccount;
+        const serviceAccountPath = resolve(
+          this.config.get<string>(
+            'FIREBASE_SERVICE_ACCOUNT_PATH',
+            './firebase-service-account.json',
+          ),
+        );
+        serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
       }
 
       if (!admin.apps.length) {
         this.app = admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
+          credential: admin.credential.cert(
+            serviceAccount as admin.ServiceAccount,
+          ),
         });
       } else {
         this.app = admin.app();
       }
     } catch (err) {
-      const source = serviceAccountJson
-        ? 'FIREBASE_SERVICE_ACCOUNT_JSON'
-        : `FIREBASE_SERVICE_ACCOUNT_PATH (${resolve(serviceAccountPath)})`;
+      const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(
-        'Firebase service account not found or invalid. ' +
+        'Firebase service account not found. ' +
           'Push notifications will be disabled. ' +
-          `Source: ${source} (${firebaseErrorMessage(err)})`,
+          `Error: ${message}`,
       );
     }
   }
